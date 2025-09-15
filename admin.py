@@ -4,11 +4,8 @@ import json
 import sys
 
 json_file = sys.argv[1]
-
-cred = credentials.Certificate('/Users/elisabethkollrack/Desktop/CS 3050/mountains_private_key.json') # Need to fix
-firebase_admin.initialize_app(cred)
+firebase_admin.initialize_app()
 db = firestore.client()
-
 
 collection = db.collection("mountains")
 
