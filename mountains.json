@@ -4,56 +4,49 @@
         "Elevation (m)": 8849,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "K2",
         "Elevation (m)": 8611,
         "Location (country)": "Pakistan/China",
         "Mountain Range": "Karakoram",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Kangchenjunga",
         "Elevation (m)": 8586,
         "Location (country)": "Nepal/India",
         "Mountain Range": "Himalayas",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Lhotse",
         "Elevation (m)": 8516,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Makalu",
         "Elevation (m)": 8485,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Denali",
         "Elevation (m)": 6190,
         "Location (country)": "USA",
         "Mountain Range": "Alaska Range",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Aconcagua",
         "Elevation (m)": 6961,
         "Location (country)": "Argentina",
         "Mountain Range": "Andes",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Elbrus",
@@ -69,23 +62,21 @@
         "Location (country)": "Tanzania",
         "Mountain Range": "Eastern Rift",
         "Volcanic": true,
-        "Last Eruption": "~360,000 yrs ago"
+        "Last Eruption": -360000
     },
     {
         "Mountain Name": "Mont Blanc",
         "Elevation (m)": 4809,
         "Location (country)": "France/Italy",
         "Mountain Range": "Alps",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Matterhorn",
         "Elevation (m)": 4478,
         "Location (country)": "Switzerland/Italy",
         "Mountain Range": "Alps",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Mount Fuji",
@@ -93,7 +84,7 @@
         "Location (country)": "Japan",
         "Mountain Range": "Fuji Volcanic Chain",
         "Volcanic": true,
-        "Last Eruption": "1707"
+        "Last Eruption": 1707
     },
     {
         "Mountain Name": "Cotopaxi",
@@ -101,7 +92,7 @@
         "Location (country)": "Ecuador",
         "Mountain Range": "Andes",
         "Volcanic": true,
-        "Last Eruption": "2023"
+        "Last Eruption": 2023
     },
     {
         "Mountain Name": "Chimborazo",
@@ -109,7 +100,7 @@
         "Location (country)": "Ecuador",
         "Mountain Range": "Andes",
         "Volcanic": true,
-        "Last Eruption": "550"
+        "Last Eruption": 550
     },
     {
         "Mountain Name": "Mauna Kea",
@@ -117,7 +108,7 @@
         "Location (country)": "USA",
         "Mountain Range": "Hawaiian Hotspot",
         "Volcanic": true,
-        "Last Eruption": "~4,600 yrs ago"
+        "Last Eruption": -2600
     },
     {
         "Mountain Name": "Mauna Loa",
@@ -125,7 +116,7 @@
         "Location (country)": "USA",
         "Mountain Range": "Hawaiian Hotspot",
         "Volcanic": true,
-        "Last Eruption": "2022"
+        "Last Eruption": 2022
     },
     {
         "Mountain Name": "Mount Etna",
@@ -133,7 +124,7 @@
         "Location (country)": "Italy",
         "Mountain Range": "Etna Volcanic Chain",
         "Volcanic": true,
-        "Last Eruption": "2025"
+        "Last Eruption": 2025
     },
     {
         "Mountain Name": "Mount Vesuvius",
@@ -141,7 +132,7 @@
         "Location (country)": "Italy",
         "Mountain Range": "Campanian Volcanic Arc",
         "Volcanic": true,
-        "Last Eruption": "1944"
+        "Last Eruption": 1944
     },
     {
         "Mountain Name": "Popocat\u00e9petl",
@@ -149,7 +140,7 @@
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
-        "Last Eruption": "2025"
+        "Last Eruption": 2025
     },
     {
         "Mountain Name": "Par\u00edcutin",
@@ -157,7 +148,7 @@
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
-        "Last Eruption": "1952"
+        "Last Eruption": 1952
     },
     {
         "Mountain Name": "Mount St. Helens",
@@ -165,7 +156,7 @@
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
-        "Last Eruption": "2008"
+        "Last Eruption": 2008
     },
     {
         "Mountain Name": "Mount Rainier",
@@ -173,7 +164,7 @@
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
-        "Last Eruption": "1894"
+        "Last Eruption": 1894
     },
     {
         "Mountain Name": "Mount Shasta",
@@ -181,7 +172,7 @@
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
-        "Last Eruption": "1250"
+        "Last Eruption": 1250
     },
     {
         "Mountain Name": "Mount Hood",
@@ -189,15 +180,14 @@
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
-        "Last Eruption": "1865"
+        "Last Eruption": 1865
     },
     {
         "Mountain Name": "Mount Olympus",
         "Elevation (m)": 2918,
         "Location (country)": "Greece",
         "Mountain Range": "Olympus Range",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Mount Ararat",
@@ -205,7 +195,7 @@
         "Location (country)": "Turkey",
         "Mountain Range": "Armenian Highlands",
         "Volcanic": true,
-        "Last Eruption": "1840"
+        "Last Eruption": 1840
     },
     {
         "Mountain Name": "Mount Damavand",
@@ -213,7 +203,7 @@
         "Location (country)": "Iran",
         "Mountain Range": "Alborz Range",
         "Volcanic": true,
-        "Last Eruption": "~5300 BC"
+        "Last Eruption": -5300
     },
     {
         "Mountain Name": "Mount Pinatubo",
@@ -221,7 +211,7 @@
         "Location (country)": "Philippines",
         "Mountain Range": "Luzon Volcanic Arc",
         "Volcanic": true,
-        "Last Eruption": "1993"
+        "Last Eruption": 1993
     },
     {
         "Mountain Name": "Krakatoa",
@@ -229,7 +219,7 @@
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
-        "Last Eruption": "2018"
+        "Last Eruption": 2018
     },
     {
         "Mountain Name": "Mount Merapi",
@@ -237,7 +227,7 @@
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
-        "Last Eruption": "2023"
+        "Last Eruption": 2023
     },
     {
         "Mountain Name": "Mount Tambora",
@@ -245,39 +235,35 @@
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
-        "Last Eruption": "1967"
+        "Last Eruption": 1967
     },
     {
         "Mountain Name": "Mount Puncak Jaya",
         "Elevation (m)": 4884,
         "Location (country)": "Indonesia",
         "Mountain Range": "Sudirman Range",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Mount Kinabalu",
         "Elevation (m)": 4095,
         "Location (country)": "Malaysia",
         "Mountain Range": "Crocker Range",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Mount Cook (Aoraki)",
         "Elevation (m)": 3724,
         "Location (country)": "New Zealand",
         "Mountain Range": "Southern Alps",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Mount Kosciuszko",
         "Elevation (m)": 2228,
         "Location (country)": "Australia",
         "Mountain Range": "Great Dividing Range",
-        "Volcanic": false,
-        "Last Eruption": "N/A"
+        "Volcanic": false
     },
     {
         "Mountain Name": "Pico de Orizaba",
@@ -285,7 +271,7 @@
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
-        "Last Eruption": "1846"
+        "Last Eruption": 1846
     },
     {
         "Mountain Name": "Teide",
@@ -293,7 +279,7 @@
         "Location (country)": "Spain",
         "Mountain Range": "Canary Hotspot",
         "Volcanic": true,
-        "Last Eruption": "1909"
+        "Last Eruption": 1909
     },
     {
         "Mountain Name": "Nevado del Ruiz",
@@ -301,7 +287,7 @@
         "Location (country)": "Colombia",
         "Mountain Range": "Andes",
         "Volcanic": true,
-        "Last Eruption": "2023"
+        "Last Eruption": 2023
     },
     {
         "Mountain Name": "Ojos del Salado",
@@ -309,6 +295,6 @@
         "Location (country)": "Chile/Argentina",
         "Mountain Range": "Andes",
         "Volcanic": true,
-        "Last Eruption": "1300"
+        "Last Eruption": 1300
     }
 ]
