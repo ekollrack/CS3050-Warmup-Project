@@ -1,19 +1,25 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+# admin.py
 import json
 import sys
+from firebase_connection import database_connection
 
-json_file = sys.argv[1]
-firebase_admin.initialize_app()
-db = firestore.client()
 
-collection = db.collection("mountains")
+def main():
+    json_file = sys.argv[1]
+    # Connect to Firestore
+    db = database_connection()
+    collection = db.collection("mountains")
 
-with open(json_file, "r") as f:
-    data = json.load(f)
+    # Load data from json file
+    with open(json_file, "r") as f:
+        data = json.load(f)
 
-for mountain in data:
-    doc_id = mountain["Mountain Name"]
-    collection.document(doc_id).set(mountain)
+    # Upload documents to Firestore
+    for mountain in data:
+        doc_id = mountain["Mountain Name"]
+        collection.document(doc_id).set(mountain)
 
-print("Data uploaded!")
+    print("Data uploaded!")
+
+if __name__ == "__main__":
+    main()
