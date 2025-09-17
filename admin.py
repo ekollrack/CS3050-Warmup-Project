@@ -6,21 +6,23 @@ import subprocess  # to call query.py
 
 # Mountain class
 class Mountain:
-    def __init__(self, name, elevation, location, mountain_range, volcanic=None):
+    def __init__(self, name, elevation, location, mountain_range, volcanic=None, last_eruption=None):
         self.name = name
         self.elevation = elevation
         self.location = location
         self.mountain_range = mountain_range
         self.volcanic = volcanic
+        self.last_eruption = last_eruption
 
     @classmethod
     def from_dict(cls, data):
         return cls(
             name=data.get("Mountain Name"),
-            elevation=data.get("Elevation"),
-            location=data.get("Location"),
+            elevation=data.get("Elevation (m)"),
+            location=data.get("Location (country)"),
             mountain_range=data.get("Mountain Range"),
-            volcanic=data.get("Volcanic")
+            volcanic=data.get("Volcanic"),
+            last_eruption=data.get("Last Eruption")
         )
 
     def to_dict(self):
@@ -28,11 +30,13 @@ class Mountain:
             "Mountain Name": self.name,
             "Elevation (m)": self.elevation,
             "Location (country)": self.location,
-            "Mountain Range": self.mountain_range
+            "Mountain Range": self.mountain_range,
+            "Volcanic": self.volcanic
         }
-        if self.volcanic is not None:
-            data["Volcanic"] = self.volcanic
+        if self.last_eruption is not None:
+            data["Last Eruption"] = self.last_eruption
         return data
+
 
 def main():
 
