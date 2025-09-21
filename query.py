@@ -1,5 +1,6 @@
 # query.py
 from firebase_connection import database_connection
+from google.cloud.firestore_v1.base_query import FieldFilter
 import pyparsing as pp
 
 # ------------------ Firestore Connection ------------------
@@ -70,8 +71,8 @@ def parse_input(user_input, mountain_names, valid_fields):
     # Case-insensitive field keywords
     field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
 
-    # operators
-    comparison_ops = ["=", "==", ">", "<", ">=", "<="]
+    # operators - longest first so "==" isn't partially matched as "="
+    comparison_ops = ["==", "!=", ">=", "<=", "=", ">", "<"]
     operator_parser = pp.MatchFirst([pp.Literal(op) for op in comparison_ops]).set_results_name("operator")
 
     # Mountain names: all words until a field (non-greedy)
@@ -86,15 +87,29 @@ def parse_input(user_input, mountain_names, valid_fields):
     grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain then Field
     grammar3 = mountain_parser                                       # Just Mountain
 
-    # Try Field + Mountain
+    # Try comparison (Field OP Number)
     try:
         result = comparison_grammar.parse_string(user_input, parse_all=True)
         field_candidate = result.get("field")
         operator_candidate = result.get("operator")
         value_candidate = result.get("value")
+
+        # normalize tokens to simple types
+        if isinstance(field_candidate, (list, pp.ParseResults)):
+            field_candidate = " ".join(field_candidate)
+        else:
+            field_candidate = str(field_candidate)
+
+        if isinstance(operator_candidate, (list, pp.ParseResults)):
+            operator_candidate = operator_candidate[0]
+        else:
+            operator_candidate = str(operator_candidate)
+
         return ("comparison", field_candidate, operator_candidate, value_candidate)
     except pp.ParseException:
         pass
+
+    # Try Field + Mountain
     try:
         result = grammar1.parse_string(user_input, parse_all=True)
         field_candidate = result.get("field")
@@ -129,7 +144,7 @@ def parse_input(user_input, mountain_names, valid_fields):
                 field_name = f
                 break
 
-    return ('normal',mountain_name, field_name)
+    return ('normal', mountain_name, field_name)
 
 
 # ------------------ Execute Command ------------------
@@ -152,10 +167,10 @@ def execute_command(user_input, collection):
     if parse_result is None:
         print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
         return
-    
+
     if parse_result[0] == "comparison":
         # Handle comparison queries
-        _,field, operator, value = parse_result
+        _, field, operator, value = parse_result
         field_mapping = {
             "Mountain Name": "Mountain Name",
             "Elevation": "Elevation",
@@ -171,9 +186,65 @@ def execute_command(user_input, collection):
         if field.title() != "Elevation":
             print(f"Comparison queries currently only supported for 'Elevation'.\n")
             return
+
+        # normalize operator: accept "=" as "=="
+        op = operator
+        if op == "=":
+            op = "=="
+
         try:
-            query = collection.where(json_key, operator, value)
-            results = list(query.stream())
+            results = []
+
+            def try_query(op_str, v):
+                return list(collection.where(filter=FieldFilter(json_key, op_str, v)).stream())
+
+            if op in ("==", "!="):
+                # Build candidate typed values (try int then float)
+                candidates = []
+                if isinstance(value, (int, float)):
+                    # keep the parsed numeric first, then the alternate numeric type
+                    candidates.append(value)
+                    if isinstance(value, int):
+                        candidates.append(float(value))
+                    else:
+                        try:
+                            candidates.append(int(value))
+                        except Exception:
+                            pass
+                else:
+                    # value may be a string; try int then float
+                    try:
+                        candidates.append(int(value))
+                    except Exception:
+                        pass
+                    try:
+                        candidates.append(float(value))
+                    except Exception:
+                        pass
+
+                # Deduplicate while preserving order
+                seen = set()
+                candidates = [c for c in candidates if not (c in seen or seen.add(c))]
+
+                for v in candidates:
+                    try:
+                        results = try_query(op, v)
+                        if results:
+                            break
+                    except Exception:
+                        # ignore type/query errors and try next candidate
+                        results = []
+                        continue
+
+            else:
+                # For <, >, <=, >= - use float (works for ints stored as numbers too)
+                try:
+                    numeric = float(value)
+                except Exception:
+                    print(f"Can't use non-numeric value for comparison: {value}\n")
+                    return
+                results = try_query(op, numeric)
+
             if not results:
                 print(f"No mountains found with {field} {operator} {value}.\n")
             else:
@@ -187,11 +258,12 @@ def execute_command(user_input, collection):
 
     elif parse_result[0] == "normal":
         # Normal parsing (mountain + optional field)
-        _,_, mountain_name, field = parse_result
+        _, mountain_name, field = parse_result
         if mountain_name:
             show_mountain_details(mountain_name, collection, field)
         else:
             print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
+
 
 # ------------------ Interactive Loop ------------------
 def run_query():
