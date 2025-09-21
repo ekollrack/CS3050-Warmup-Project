@@ -1,56 +1,56 @@
 [
     {
         "Mountain Name": "Mount Everest",
-        "Elevation (m)": 8849,
+        "Elevation": 8849,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
         "Volcanic": false
     },
     {
         "Mountain Name": "K2",
-        "Elevation (m)": 8611,
+        "Elevation": 8611,
         "Location (country)": "Pakistan/China",
         "Mountain Range": "Karakoram",
         "Volcanic": false
     },
     {
         "Mountain Name": "Kangchenjunga",
-        "Elevation (m)": 8586,
+        "Elevation": 8586,
         "Location (country)": "Nepal/India",
         "Mountain Range": "Himalayas",
         "Volcanic": false
     },
     {
         "Mountain Name": "Lhotse",
-        "Elevation (m)": 8516,
+        "Elevation": 8516,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
         "Volcanic": false
     },
     {
         "Mountain Name": "Makalu",
-        "Elevation (m)": 8485,
+        "Elevation": 8485,
         "Location (country)": "Nepal/China",
         "Mountain Range": "Himalayas",
         "Volcanic": false
     },
     {
         "Mountain Name": "Denali",
-        "Elevation (m)": 6190,
+        "Elevation": 6190,
         "Location (country)": "USA",
         "Mountain Range": "Alaska Range",
         "Volcanic": false
     },
     {
         "Mountain Name": "Aconcagua",
-        "Elevation (m)": 6961,
+        "Elevation": 6961,
         "Location (country)": "Argentina",
         "Mountain Range": "Andes",
         "Volcanic": false
     },
     {
         "Mountain Name": "Elbrus",
-        "Elevation (m)": 5642,
+        "Elevation": 5642,
         "Location (country)": "Russia",
         "Mountain Range": "Caucasus",
         "Volcanic": true,
@@ -58,7 +58,7 @@
     },
     {
         "Mountain Name": "Kilimanjaro",
-        "Elevation (m)": 5895,
+        "Elevation": 5895,
         "Location (country)": "Tanzania",
         "Mountain Range": "Eastern Rift",
         "Volcanic": true,
@@ -66,21 +66,21 @@
     },
     {
         "Mountain Name": "Mont Blanc",
-        "Elevation (m)": 4809,
+        "Elevation": 4809,
         "Location (country)": "France/Italy",
         "Mountain Range": "Alps",
         "Volcanic": false
     },
     {
         "Mountain Name": "Matterhorn",
-        "Elevation (m)": 4478,
+        "Elevation": 4478,
         "Location (country)": "Switzerland/Italy",
         "Mountain Range": "Alps",
         "Volcanic": false
     },
     {
         "Mountain Name": "Mount Fuji",
-        "Elevation (m)": 3776,
+        "Elevation": 3776,
         "Location (country)": "Japan",
         "Mountain Range": "Fuji Volcanic Chain",
         "Volcanic": true,
@@ -88,7 +88,7 @@
     },
     {
         "Mountain Name": "Cotopaxi",
-        "Elevation (m)": 5897,
+        "Elevation": 5897,
         "Location (country)": "Ecuador",
         "Mountain Range": "Andes",
         "Volcanic": true,
@@ -96,7 +96,7 @@
     },
     {
         "Mountain Name": "Chimborazo",
-        "Elevation (m)": 6263,
+        "Elevation": 6263,
         "Location (country)": "Ecuador",
         "Mountain Range": "Andes",
         "Volcanic": true,
@@ -104,7 +104,7 @@
     },
     {
         "Mountain Name": "Mauna Kea",
-        "Elevation (m)": 4207,
+        "Elevation": 4207,
         "Location (country)": "USA",
         "Mountain Range": "Hawaiian Hotspot",
         "Volcanic": true,
@@ -112,7 +112,7 @@
     },
     {
         "Mountain Name": "Mauna Loa",
-        "Elevation (m)": 4169,
+        "Elevation": 4169,
         "Location (country)": "USA",
         "Mountain Range": "Hawaiian Hotspot",
         "Volcanic": true,
@@ -120,7 +120,7 @@
     },
     {
         "Mountain Name": "Mount Etna",
-        "Elevation (m)": 3329,
+        "Elevation": 3329,
         "Location (country)": "Italy",
         "Mountain Range": "Etna Volcanic Chain",
         "Volcanic": true,
@@ -128,7 +128,7 @@
     },
     {
         "Mountain Name": "Mount Vesuvius",
-        "Elevation (m)": 1281,
+        "Elevation": 1281,
         "Location (country)": "Italy",
         "Mountain Range": "Campanian Volcanic Arc",
         "Volcanic": true,
@@ -136,7 +136,7 @@
     },
     {
         "Mountain Name": "Popocat\u00e9petl",
-        "Elevation (m)": 5426,
+        "Elevation": 5426,
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
@@ -144,7 +144,7 @@
     },
     {
         "Mountain Name": "Par\u00edcutin",
-        "Elevation (m)": 2800,
+        "Elevation": 2800,
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
@@ -152,7 +152,7 @@
     },
     {
         "Mountain Name": "Mount St. Helens",
-        "Elevation (m)": 2550,
+        "Elevation": 2550,
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
@@ -160,7 +160,7 @@
     },
     {
         "Mountain Name": "Mount Rainier",
-        "Elevation (m)": 4392,
+        "Elevation": 4392,
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
@@ -168,7 +168,7 @@
     },
     {
         "Mountain Name": "Mount Shasta",
-        "Elevation (m)": 4322,
+        "Elevation": 4322,
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
@@ -176,7 +176,7 @@
     },
     {
         "Mountain Name": "Mount Hood",
-        "Elevation (m)": 3429,
+        "Elevation": 3429,
         "Location (country)": "USA",
         "Mountain Range": "Cascades",
         "Volcanic": true,
@@ -184,14 +184,14 @@
     },
     {
         "Mountain Name": "Mount Olympus",
-        "Elevation (m)": 2918,
+        "Elevation": 2918,
         "Location (country)": "Greece",
         "Mountain Range": "Olympus Range",
         "Volcanic": false
     },
     {
         "Mountain Name": "Mount Ararat",
-        "Elevation (m)": 5137,
+        "Elevation": 5137,
         "Location (country)": "Turkey",
         "Mountain Range": "Armenian Highlands",
         "Volcanic": true,
@@ -199,7 +199,7 @@
     },
     {
         "Mountain Name": "Mount Damavand",
-        "Elevation (m)": 5610,
+        "Elevation": 5610,
         "Location (country)": "Iran",
         "Mountain Range": "Alborz Range",
         "Volcanic": true,
@@ -207,7 +207,7 @@
     },
     {
         "Mountain Name": "Mount Pinatubo",
-        "Elevation (m)": 1486,
+        "Elevation": 1486,
         "Location (country)": "Philippines",
         "Mountain Range": "Luzon Volcanic Arc",
         "Volcanic": true,
@@ -215,7 +215,7 @@
     },
     {
         "Mountain Name": "Krakatoa",
-        "Elevation (m)": 813,
+        "Elevation": 813,
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
@@ -223,7 +223,7 @@
     },
     {
         "Mountain Name": "Mount Merapi",
-        "Elevation (m)": 2930,
+        "Elevation": 2930,
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
@@ -231,7 +231,7 @@
     },
     {
         "Mountain Name": "Mount Tambora",
-        "Elevation (m)": 2850,
+        "Elevation": 2850,
         "Location (country)": "Indonesia",
         "Mountain Range": "Sunda Arc",
         "Volcanic": true,
@@ -239,35 +239,35 @@
     },
     {
         "Mountain Name": "Mount Puncak Jaya",
-        "Elevation (m)": 4884,
+        "Elevation": 4884,
         "Location (country)": "Indonesia",
         "Mountain Range": "Sudirman Range",
         "Volcanic": false
     },
     {
         "Mountain Name": "Mount Kinabalu",
-        "Elevation (m)": 4095,
+        "Elevation": 4095,
         "Location (country)": "Malaysia",
         "Mountain Range": "Crocker Range",
         "Volcanic": false
     },
     {
         "Mountain Name": "Mount Cook (Aoraki)",
-        "Elevation (m)": 3724,
+        "Elevation": 3724,
         "Location (country)": "New Zealand",
         "Mountain Range": "Southern Alps",
         "Volcanic": false
     },
     {
         "Mountain Name": "Mount Kosciuszko",
-        "Elevation (m)": 2228,
+        "Elevation": 2228,
         "Location (country)": "Australia",
         "Mountain Range": "Great Dividing Range",
         "Volcanic": false
     },
     {
         "Mountain Name": "Pico de Orizaba",
-        "Elevation (m)": 5636,
+        "Elevation": 5636,
         "Location (country)": "Mexico",
         "Mountain Range": "Trans-Mex Volcanic",
         "Volcanic": true,
@@ -275,7 +275,7 @@
     },
     {
         "Mountain Name": "Teide",
-        "Elevation (m)": 3718,
+        "Elevation": 3718,
         "Location (country)": "Spain",
         "Mountain Range": "Canary Hotspot",
         "Volcanic": true,
@@ -283,7 +283,7 @@
     },
     {
         "Mountain Name": "Nevado del Ruiz",
-        "Elevation (m)": 5321,
+        "Elevation": 5321,
         "Location (country)": "Colombia",
         "Mountain Range": "Andes",
         "Volcanic": true,
@@ -291,7 +291,7 @@
     },
     {
         "Mountain Name": "Ojos del Salado",
-        "Elevation (m)": 6893,
+        "Elevation": 6893,
         "Location (country)": "Chile/Argentina",
         "Mountain Range": "Andes",
         "Volcanic": true,

@@ -42,7 +42,7 @@ def show_mountain_details(name, collection, field=None):
     data = doc.to_dict()
     field_mapping = {
         "Mountain Name": "Mountain Name",
-        "Elevation": "Elevation (m)",
+        "Elevation": "Elevation",
         "Location": "Location (country)",
         "Mountain Range": "Mountain Range",
         "Volcanic": "Volcanic",
@@ -70,15 +70,31 @@ def parse_input(user_input, mountain_names, valid_fields):
     # Case-insensitive field keywords
     field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
 
+    # operators
+    comparison_ops = ["=", "==", ">", "<", ">=", "<="]
+    operator_parser = pp.MatchFirst([pp.Literal(op) for op in comparison_ops]).set_results_name("operator")
+
     # Mountain names: all words until a field (non-greedy)
     mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-'")).set_results_name("mountain")
 
+    # elevation value
+    number_parser = pp.pyparsing_common.number.set_results_name("value")
+
     # Explicit grammars
+    comparison_grammar = field_parser + operator_parser + number_parser
     grammar1 = field_parser + mountain_parser                        # Field then Mountain
     grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain then Field
     grammar3 = mountain_parser                                       # Just Mountain
 
     # Try Field + Mountain
+    try:
+        result = comparison_grammar.parse_string(user_input, parse_all=True)
+        field_candidate = result.get("field")
+        operator_candidate = result.get("operator")
+        value_candidate = result.get("value")
+        return ("comparison", field_candidate, operator_candidate, value_candidate)
+    except pp.ParseException:
+        pass
     try:
         result = grammar1.parse_string(user_input, parse_all=True)
         field_candidate = result.get("field")
@@ -96,7 +112,7 @@ def parse_input(user_input, mountain_names, valid_fields):
                 field_candidate = None
                 mountain_candidate = " ".join(result.get("mountain", []))
             except pp.ParseException:
-                return None, None
+                return None, None, None
 
     # Normalize mountain name
     mountain_name = None
@@ -113,7 +129,7 @@ def parse_input(user_input, mountain_names, valid_fields):
                 field_name = f
                 break
 
-    return mountain_name, field_name
+    return ('normal',mountain_name, field_name)
 
 
 # ------------------ Execute Command ------------------
@@ -131,11 +147,51 @@ def execute_command(user_input, collection):
     mountain_names = [doc.id for doc in all_docs]
     valid_fields = ["Mountain Name", "Elevation", "Location", "Mountain Range", "Volcanic", "Last Eruption"]
 
-    mountain_name, field = parse_input(user_input, mountain_names, valid_fields)
-    if mountain_name:
-        show_mountain_details(mountain_name, collection, field)
-    else:
+    parse_result = parse_input(user_input, mountain_names, valid_fields)
+
+    if parse_result is None:
         print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
+        return
+    
+    if parse_result[0] == "comparison":
+        # Handle comparison queries
+        _,field, operator, value = parse_result
+        field_mapping = {
+            "Mountain Name": "Mountain Name",
+            "Elevation": "Elevation",
+            "Location": "Location (country)",
+            "Mountain Range": "Mountain Range",
+            "Volcanic": "Volcanic",
+            "Last Eruption": "Last Eruption"
+        }
+        json_key = field_mapping.get(field.title())
+        if json_key is None:
+            print(f"Unknown field '{field}'. Available fields: {', '.join(field_mapping.keys())}\n")
+            return
+        if field.title() != "Elevation":
+            print(f"Comparison queries currently only supported for 'Elevation'.\n")
+            return
+        try:
+            query = collection.where(json_key, operator, value)
+            results = list(query.stream())
+            if not results:
+                print(f"No mountains found with {field} {operator} {value}.\n")
+            else:
+                print(f"Mountains with {field} {operator} {value}:")
+                for doc in results:
+                    data = doc.to_dict()
+                    print(f"- {doc.id}: Elevation (m) = {data.get(json_key, 'N/A')}")
+                print()
+        except Exception as e:
+            print(f"Error querying database: {e}\n")
+
+    elif parse_result[0] == "normal":
+        # Normal parsing (mountain + optional field)
+        _,_, mountain_name, field = parse_result
+        if mountain_name:
+            show_mountain_details(mountain_name, collection, field)
+        else:
+            print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
 
 # ------------------ Interactive Loop ------------------
 def run_query():

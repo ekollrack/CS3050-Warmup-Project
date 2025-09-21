@@ -18,7 +18,7 @@ class Mountain:
     def from_dict(cls, data):
         return cls(
             name=data.get("Mountain Name"),
-            elevation=data.get("Elevation (m)"),
+            elevation=data.get("Elevation"),
             location=data.get("Location (country)"),
             mountain_range=data.get("Mountain Range"),
             volcanic=data.get("Volcanic"),
@@ -28,7 +28,7 @@ class Mountain:
     def to_dict(self):
         data = {
             "Mountain Name": self.name,
-            "Elevation (m)": self.elevation,
+            "Elevation": self.elevation,
             "Location (country)": self.location,
             "Mountain Range": self.mountain_range,
             "Volcanic": self.volcanic
