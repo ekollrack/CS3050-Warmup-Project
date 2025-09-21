@@ -1,7 +1,8 @@
 # query.py
 from firebase_connection import database_connection
-from google.cloud.firestore_v1.base_query import FieldFilter
 import pyparsing as pp
+import warnings
+warnings.filterwarnings("ignore")
 
 # ------------------ Firestore Connection ------------------
 def get_collection():
@@ -66,214 +67,167 @@ def show_mountain_details(name, collection, field=None):
             else:
                 print(f"{field.title()} of {name}: {data.get(json_key, 'N/A')}\n")
 
-# ------------------ PyParsing Setup ------------------
-def parse_input(user_input, mountain_names, valid_fields):
-    # Case-insensitive field keywords
+# ------------------ Parsing ------------------
+def parse(user_input, mountain_names, valid_fields):
+    """
+    Returns a dictionary:
+    {
+        'type': 'comparison' or 'normal',
+        'field': field name or None,
+        'operator': operator or None,
+        'value': numeric value or None,
+        'mountain_name': mountain name or None
+    }
+    """
+    # Field parser
     field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
-
-    # operators - longest first so "==" isn't partially matched as "="
-    comparison_ops = ["==", "!=", ">=", "<=", "=", ">", "<"]
-    operator_parser = pp.MatchFirst([pp.Literal(op) for op in comparison_ops]).set_results_name("operator")
-
-    # Mountain names: all words until a field (non-greedy)
+    # Operator parser (longest first)
+    operator_parser = pp.MatchFirst([pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
+    # Mountain parser
     mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-'")).set_results_name("mountain")
-
-    # elevation value
+    # Number parser
     number_parser = pp.pyparsing_common.number.set_results_name("value")
 
-    # Explicit grammars
+    # Comparison grammar: Field OP Number
     comparison_grammar = field_parser + operator_parser + number_parser
-    grammar1 = field_parser + mountain_parser                        # Field then Mountain
-    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain then Field
-    grammar3 = mountain_parser                                       # Just Mountain
+    # Normal grammars
+    grammar1 = field_parser + mountain_parser       # Field then Mountain
+    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
+    grammar3 = mountain_parser                     # Mountain only
 
-    # Try comparison (Field OP Number)
+    # Try comparison first
     try:
         result = comparison_grammar.parse_string(user_input, parse_all=True)
-        field_candidate = result.get("field")
-        operator_candidate = result.get("operator")
-        value_candidate = result.get("value")
-
-        # normalize tokens to simple types
-        if isinstance(field_candidate, (list, pp.ParseResults)):
-            field_candidate = " ".join(field_candidate)
-        else:
-            field_candidate = str(field_candidate)
-
-        if isinstance(operator_candidate, (list, pp.ParseResults)):
-            operator_candidate = operator_candidate[0]
-        else:
-            operator_candidate = str(operator_candidate)
-
-        return ("comparison", field_candidate, operator_candidate, value_candidate)
+        return {
+            "type": "comparison",
+            "field": str(result.field),
+            "operator": str(result.operator),
+            "value": result.value,
+            "mountain_name": None
+        }
     except pp.ParseException:
         pass
 
-    # Try Field + Mountain
+    # Normal parsing
+    mountain_name = None
+    field_name = None
     try:
         result = grammar1.parse_string(user_input, parse_all=True)
-        field_candidate = result.get("field")
+        field_name = str(result.field)
         mountain_candidate = " ".join(result.get("mountain", []))
     except pp.ParseException:
-        # Try Mountain + Field
         try:
             result = grammar2.parse_string(user_input, parse_all=True)
-            field_candidate = result.get("field")
-            mountain_candidate = result.get("mountain", "").strip()
+            field_name = str(result.field)
+            mountain_candidate = result.mountain.strip()
         except pp.ParseException:
-            # Try Mountain only
             try:
                 result = grammar3.parse_string(user_input, parse_all=True)
-                field_candidate = None
                 mountain_candidate = " ".join(result.get("mountain", []))
             except pp.ParseException:
-                return None, None, None
+                return None
 
     # Normalize mountain name
-    mountain_name = None
-    for name in mountain_names:
-        if name.lower() == mountain_candidate.lower():
-            mountain_name = name
-            break
+    if mountain_candidate:
+        for name in mountain_names:
+            if name.lower() == mountain_candidate.lower():
+                mountain_name = name
+                break
 
-    # Normalize field
-    field_name = None
-    if field_candidate:
+    # Normalize field name
+    if field_name:
         for f in valid_fields:
-            if f.lower() == field_candidate.lower():
+            if f.lower() == field_name.lower():
                 field_name = f
                 break
 
-    return ('normal', mountain_name, field_name)
+    return {
+        "type": "normal",
+        "field": field_name,
+        "value": None,
+        "operator": None,
+        "mountain_name": mountain_name
+    }
 
-
-# ------------------ Execute Command ------------------
-def execute_command(user_input, collection):
-    user_input_lower = user_input.lower().strip()
-    if not user_input_lower:
-        return
-    if user_input_lower == "help":
-        print_help()
-        return
-    if user_input_lower == "quit":
-        exit()
-
-    all_docs = collection.stream()
-    mountain_names = [doc.id for doc in all_docs]
-    valid_fields = ["Mountain Name", "Elevation", "Location", "Mountain Range", "Volcanic", "Last Eruption"]
-
-    parse_result = parse_input(user_input, mountain_names, valid_fields)
-
-    if parse_result is None:
-        print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
+# ------------------ Query Execution ------------------
+def query(parsed_result, collection):
+    if parsed_result is None:
+        print("Invalid input. Type 'help' for guidance.\n")
         return
 
-    if parse_result[0] == "comparison":
-        # Handle comparison queries
-        _, field, operator, value = parse_result
-        field_mapping = {
-            "Mountain Name": "Mountain Name",
-            "Elevation": "Elevation",
-            "Location": "Location (country)",
-            "Mountain Range": "Mountain Range",
-            "Volcanic": "Volcanic",
-            "Last Eruption": "Last Eruption"
-        }
-        json_key = field_mapping.get(field.title())
-        if json_key is None:
-            print(f"Unknown field '{field}'. Available fields: {', '.join(field_mapping.keys())}\n")
-            return
+    field_mapping = {
+        "Mountain Name": "Mountain Name",
+        "Elevation": "Elevation",
+        "Location": "Location (country)",
+        "Mountain Range": "Mountain Range",
+        "Volcanic": "Volcanic",
+        "Last Eruption": "Last Eruption"
+    }
+
+    if parsed_result["type"] == "comparison":
+        field = parsed_result["field"]
+        operator = parsed_result["operator"]
+        value = parsed_result["value"]
+
         if field.title() != "Elevation":
-            print(f"Comparison queries currently only supported for 'Elevation'.\n")
+            print("Comparison queries currently only supported for 'Elevation'.\n")
             return
 
-        # normalize operator: accept "=" as "=="
-        op = operator
-        if op == "=":
-            op = "=="
+        # normalize operator
+        if operator == "=":
+            operator = "=="
+
+        json_key = field_mapping.get(field.title())
+        if not json_key:
+            print(f"Unknown field '{field}'.\n")
+            return
 
         try:
-            results = []
+            numeric_value = float(value)
+        except Exception:
+            print(f"Invalid numeric value: {value}\n")
+            return
 
-            def try_query(op_str, v):
-                return list(collection.where(filter=FieldFilter(json_key, op_str, v)).stream())
-
-            if op in ("==", "!="):
-                # Build candidate typed values (try int then float)
-                candidates = []
-                if isinstance(value, (int, float)):
-                    # keep the parsed numeric first, then the alternate numeric type
-                    candidates.append(value)
-                    if isinstance(value, int):
-                        candidates.append(float(value))
-                    else:
-                        try:
-                            candidates.append(int(value))
-                        except Exception:
-                            pass
-                else:
-                    # value may be a string; try int then float
-                    try:
-                        candidates.append(int(value))
-                    except Exception:
-                        pass
-                    try:
-                        candidates.append(float(value))
-                    except Exception:
-                        pass
-
-                # Deduplicate while preserving order
-                seen = set()
-                candidates = [c for c in candidates if not (c in seen or seen.add(c))]
-
-                for v in candidates:
-                    try:
-                        results = try_query(op, v)
-                        if results:
-                            break
-                    except Exception:
-                        # ignore type/query errors and try next candidate
-                        results = []
-                        continue
-
-            else:
-                # For <, >, <=, >= - use float (works for ints stored as numbers too)
-                try:
-                    numeric = float(value)
-                except Exception:
-                    print(f"Can't use non-numeric value for comparison: {value}\n")
-                    return
-                results = try_query(op, numeric)
-
-            if not results:
-                print(f"No mountains found with {field} {operator} {value}.\n")
-            else:
-                print(f"Mountains with {field} {operator} {value}:")
-                for doc in results:
-                    data = doc.to_dict()
-                    print(f"- {doc.id}: Elevation (m) = {data.get(json_key, 'N/A')}")
-                print()
+        try:
+            results = list(collection.where(json_key, operator, numeric_value).stream())
         except Exception as e:
             print(f"Error querying database: {e}\n")
+            return
 
-    elif parse_result[0] == "normal":
-        # Normal parsing (mountain + optional field)
-        _, mountain_name, field = parse_result
-        if mountain_name:
-            show_mountain_details(mountain_name, collection, field)
+        if not results:
+            print(f"No mountains found with {field} {operator} {value}.\n")
         else:
-            print(f"No information found for '{user_input}'. Type 'help' for guidance.\n")
+            print(f"Mountains with {field} {operator} {value}:")
+            for doc in results:
+                data = doc.to_dict()
+                print(f"- {doc.id}: Elevation (m) = {data.get(json_key, 'N/A')}")
+            print()
 
+    elif parsed_result["type"] == "normal":
+        show_mountain_details(parsed_result["mountain_name"], collection, parsed_result["field"])
 
 # ------------------ Interactive Loop ------------------
 def run_query():
     collection = get_collection()
+    all_docs = collection.stream()
+    mountain_names = [doc.id for doc in all_docs]
+    valid_fields = ["Mountain Name", "Elevation", "Location", "Mountain Range", "Volcanic", "Last Eruption"]
+
     print("Welcome to Mountains Query Program!")
     print("Type 'help' for commands. Type 'quit' to exit.")
 
     while True:
         user_input = input("> ").strip()
-        execute_command(user_input, collection)
+        if not user_input:
+            continue
+        if user_input.lower() == "help":
+            print_help()
+            continue
+        if user_input.lower() == "quit":
+            exit()
+
+        parsed = parse(user_input, mountain_names, valid_fields)
+        query(parsed, collection)
 
 # ------------------ Entry Point ------------------
 if __name__ == "__main__":
