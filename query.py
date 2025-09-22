@@ -3,12 +3,13 @@ import pyparsing as pp
 import warnings
 warnings.filterwarnings("ignore")
 
-# ------------------ Firestore Connection ------------------
+# Connect to firebase_connection.py (which connects to firestore)
+# References "mountains" collection
 def get_collection():
     db = database_connection()
     return db.collection("mountains")
 
-# ------------------ Help Menu ------------------
+# Returns instructions for running the program
 def print_help():
     print("""
 Welcome to the Mountains Query Program!
@@ -41,14 +42,18 @@ Available fields:
    MountainName, Elevation, Location, Range, Volcanic, LastEruption
 """)
 
-# ------------------ Show Mountain Details ------------------
+# This function is for queries that mention the mountain name or mountain name + field (normal queries)
+# Returns the details for the mountain or the specified field
+# Parameters - name (str, mountain name), collection (collection in Firestore), field (str, optional)
 def show_mountain_details(name, collection, field=None):
+    # uses the mountain name to find it in Firestore
     doc_ref = collection.document(name)
     doc = doc_ref.get()
     if not doc.exists:
         print(f"No information found. Type 'help' for guidance. \n")
         return
 
+    # Maps MountainName to Mountain Name and Last Eruption to LastEruption
     data = doc.to_dict()
     field_mapping = {
         "Mountain Name": "MountainName",
@@ -59,15 +64,19 @@ def show_mountain_details(name, collection, field=None):
         "Last Eruption": "LastEruption"
     }
 
+    # Show mountain details if no field was specified
     if field is None:
         print(f"\nDetails for {name}:")
         for key, json_key in field_mapping.items():
             if json_key in data:
                 print(f"{key}: {data[json_key]}")
         print()
+
+    # Show one field info
     else:
         # Normalize field name
         json_key = None
+        # Strip spaces
         for k, v in field_mapping.items():
             if field.lower() == k.lower().replace(" ", "") or field.lower() == v.lower():
                 json_key = v
@@ -77,14 +86,16 @@ def show_mountain_details(name, collection, field=None):
             print("No information found. Type 'help' for guidance.\n")
             return
 
+        # Makes volcanic read like yes/no question (more user-friendly)
         if field.lower() == "volcanic":
             print(f"Is {name} Volcanic? {data.get(json_key, 'N/A')}\n")
         else:
             print(f"{field} of {name}: {data.get(json_key, 'N/A')}\n")
 
-# ------------------ Parsing ------------------
+# This function parses queries with comparison operators and returns a dictionary
+# Parameters - user input (str from user), mountain names (list of str), valid fields (list of str)
 def parse(user_input, mountain_names, valid_fields):
-    # Field parser (case-insensitive)
+    # Field parser (case-insensitive) to match the specified field
     field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
 
     # Operator parser
@@ -100,18 +111,23 @@ def parse(user_input, mountain_names, valid_fields):
     # Mountain parser: allow letters, numbers, hyphens, apostrophes, and dots
     mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-.'")).set_results_name("mountain")
 
-    # Grammars
+    # field operator value structure
     comparison_grammar = field_parser + operator_parser + value_parser
-    grammar1 = field_parser + mountain_parser  # Field first, then mountain
-    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain first, then field
-    grammar3 = mountain_parser  # Only mountain name
+    # Field first, then mountain
+    grammar1 = field_parser + mountain_parser
+    # Mountain first, then field
+    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
+    # Only mountain name
+    grammar3 = mountain_parser
 
-    # ------------------ Comparison Query ------------------
+    # For comparison queries (comparison_grammer)
     try:
         result = comparison_grammar.parse_string(user_input, parse_all=True)
         op = str(result.operator)
         if op == "=":
             op = "=="
+
+        # Convert value to bool, float, or string
         val = result.value
 
         if isinstance(val, str):
@@ -122,7 +138,7 @@ def parse(user_input, mountain_names, valid_fields):
                     val = float(val)
                 except ValueError:
                     val = val.strip()
-
+        # return comparison query
         return {"type": "comparison", "field": str(result.field), "operator": op, "value": val, "mountain_name": None}
     except pp.ParseException:
         pass
@@ -164,7 +180,7 @@ def parse(user_input, mountain_names, valid_fields):
     return {"type": "normal", "field": field_name, "value": None, "operator": None, "mountain_name": mountain_name}
 
 
-# ------------------ Query Execution ------------------
+# This function takes the dictionary from the parsed query and prints the results
 def query(params, collection):
     if params is None:
         print("Invalid input. Type 'help' for guidance.\n")
@@ -186,7 +202,7 @@ def query(params, collection):
             doc_val = doc.get(field, None)
             match = False
 
-            # Special handling for Location field (list of countries)
+            # Special handling for Location field (country1/country2)
             if field.lower() == "location" and isinstance(doc_val, str):
                 countries = [c.strip().lower() for c in doc_val.replace(",", "/").split("/")]
                 if operator == "==":
@@ -233,16 +249,19 @@ def query(params, collection):
         show_mountain_details(params["mountain_name"], collection, params["field"])
 
 
-# ------------------ Interactive Loop ------------------
+# First function called, calls other functions
 def run_query():
+
+    # Connect to firestore and get mountain names and fields
     collection = get_collection()
     all_docs = collection.stream()
     mountain_names = [doc.id for doc in all_docs]
     valid_fields = ["MountainName", "Elevation", "Location", "Range", "Volcanic", "LastEruption"]
 
-    print("Welcome to Mountains Query Program!")
+    print("Welcome!")
     print("Type 'help' for commands. Type 'quit' to exit.")
 
+    # Gets user input
     while True:
         user_input = input("> ").strip()
         if not user_input:
@@ -253,9 +272,10 @@ def run_query():
         if user_input.lower() == "quit":
             exit()
 
+        # Parse and execute query
         parsed = parse(user_input, mountain_names, valid_fields)
         query(parsed, collection)
 
-# ------------------ Entry Point ------------------
+# Main functionality
 if __name__ == "__main__":
     run_query()
