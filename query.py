@@ -76,27 +76,28 @@ def show_mountain_details(name, collection, field=None):
     else:
         # Normalize field name
         json_key = None
-        # Strip spaces
+        field_input = field.lower().replace(" ", "")
         for k, v in field_mapping.items():
-            if field.lower() == k.lower().replace(" ", "") or field.lower() == v.lower():
+            if field_input == k.lower().replace(" ", "") or field_input == v.lower().replace(" ", ""):
                 json_key = v
                 break
 
         if not json_key:
             print("No information found. Type 'help' for guidance.\n")
             return
-
-        # Makes volcanic read like yes/no question (more user-friendly)
         if field.lower() == "volcanic":
             print(f"Is {name} Volcanic? {data.get(json_key, 'N/A')}\n")
         else:
-            print(f"{field} of {name}: {data.get(json_key, 'N/A')}\n")
+            print(f"{v} of {name}: {data.get(json_key, 'N/A')}\n")
+
 
 # This function parses queries with comparison operators and returns a dictionary
 # Parameters - user input (str from user), mountain names (list of str), valid fields (list of str)
 def parse(user_input, mountain_names, valid_fields):
     # Field parser (case-insensitive) to match the specified field
-    field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
+    field_parser = pp.MatchFirst([
+        pp.CaselessKeyword(f) for f in ["Mountain Name", "Elevation", "Location", "Range", "Volcanic", "Last Eruption"]
+    ]).set_results_name("field")
 
     # Operator parser
     operator_parser = pp.MatchFirst(
@@ -172,8 +173,9 @@ def parse(user_input, mountain_names, valid_fields):
 
     # Match field name case-insensitively
     if field_name:
+        field_input = field_name.lower().replace(" ", "")
         for f in valid_fields:
-            if f.lower() == field_name.lower():
+            if field_input == f.lower().replace(" ", ""):
                 field_name = f
                 break
 
@@ -256,7 +258,7 @@ def run_query():
     collection = get_collection()
     all_docs = collection.stream()
     mountain_names = [doc.id for doc in all_docs]
-    valid_fields = ["MountainName", "Elevation", "Location", "Range", "Volcanic", "LastEruption"]
+    valid_fields = ["MountainName", "Elevation", "Location", "Range", "Volcanic", "LastEruption", "Mountain Name", "Last Eruption"]
 
     print("Welcome!")
     print("Type 'help' for commands. Type 'quit' to exit.")
