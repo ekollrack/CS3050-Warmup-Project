@@ -51,7 +51,6 @@ def main():
     old_docs = collection.stream()
     for doc in old_docs:
         collection.document(doc.id).delete()
-    print("Old documents deleted.")
 
     # Load data
     with open(json_file, "r") as f:
@@ -64,8 +63,6 @@ def main():
             print("Skipping entry with missing mountain name.")
             continue
         collection.document(mountain.name).set(mountain.to_dict())
-
-    print("Data uploaded!")
 
     # Call query.py after upload
     subprocess.run(["python3", "query.py"])
