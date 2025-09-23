@@ -91,6 +91,23 @@ def show_mountain_details(name, collection, field=None):
             print(f"{v} of {name}: {data.get(json_key, 'N/A')}\n")
 
 
+def sort(collection, type, assend):
+    if type == "name":
+        sort_name(collection, assend)
+
+
+def sort_name(collection, assend):
+    docs = collection.stream()
+    print("docs")
+    names = []
+    for doc in docs:
+        names.append(doc.get("MountainName"))
+    names.sort(reverse = True)
+    print(names)
+
+
+
+
 # This function parses queries with comparison operators and returns a dictionary
 # Parameters - user input (str from user), mountain names (list of str), valid fields (list of str)
 def parse(user_input, mountain_names, valid_fields):
@@ -270,6 +287,9 @@ def run_query():
             continue
         if user_input.lower() == "help":
             print_help()
+            continue
+        if user_input.lower() == "sort_name":
+            sort(collection, "name", True)
             continue
         if user_input.lower() == "quit":
             exit()
