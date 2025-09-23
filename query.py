@@ -134,51 +134,12 @@ def parse(user_input, mountain_names, valid_fields):
 
     # field operator value structure
     comparison_grammar = field_parser + operator_parser + value_parser
-<<<<<<< HEAD
-    grammar1 = field_parser + mountain_parser  # Field first, then mountain
-    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain first, then field
-    grammar3 = mountain_parser  # Only mountain name
-    compound_grammar = comparison_grammar("cond1") + logical_op("logic") + comparison_grammar("cond2") # and or queries
-
-    # ------------------ And Or Query ------------------
-    try:
-        result = compound_grammar.parse_string(user_input, parse_all=True)
-        logic = str(result.logic).lower()
-
-        def normalize(val):
-            if isinstance(val, str):
-                if val.lower() in ("true", "false"):
-                    return val.lower() == "true"
-                else:
-                    try:
-                        return float(val)
-                    except ValueError:
-                        return val.strip()
-            return val
-        cond1 = {
-        "field": str(result.cond1.field),
-        "operator": str(result.cond1.operator),
-        "value": normalize(result.cond1.value),
-        }
-        cond2 = {
-        "field": str(result.cond2.field),
-        "operator": str(result.cond2.operator),
-        "value": normalize(result.cond2.value),
-        }
-        cond1["field"] = normalize(cond1["field"])
-        cond2["field"] = normalize(cond2["field"])
-
-        return {"type": "compound", "logic": logic, "conditions": [cond1, cond2]}
-    except pp.ParseException:
-        pass
-=======
     # Field first, then mountain
     grammar1 = field_parser + mountain_parser
     # Mountain first, then field
     grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
     # Only mountain name
     grammar3 = mountain_parser
->>>>>>> 8498eee5a64a01a19464954c042d478bc6ef0cd7
 
     # For comparison queries (comparison_grammer)
     try:
