@@ -90,6 +90,9 @@ def parse(user_input, mountain_names, valid_fields):
     # Operator parser
     operator_parser = pp.MatchFirst(
         [pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
+    
+    # And or parser
+    logical_op = pp.CaselessKeyword("and") | pp.CaselessKeyword("or")
 
     # Value parser
     number_parser = pp.pyparsing_common.number
@@ -105,6 +108,39 @@ def parse(user_input, mountain_names, valid_fields):
     grammar1 = field_parser + mountain_parser  # Field first, then mountain
     grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser  # Mountain first, then field
     grammar3 = mountain_parser  # Only mountain name
+    compound_grammar = comparison_grammar("cond1") + logical_op("logic") + comparison_grammar("cond2") # and or queries
+
+    # ------------------ And Or Query ------------------
+    try:
+        result = compound_grammar.parse_string(user_input, parse_all=True)
+        logic = str(result.logic).lower()
+
+        def normalize(val):
+            if isinstance(val, str):
+                if val.lower() in ("true", "false"):
+                    return val.lower() == "true"
+                else:
+                    try:
+                        return float(val)
+                    except ValueError:
+                        return val.strip()
+            return val
+        cond1 = {
+        "field": str(result.cond1.field),
+        "operator": str(result.cond1.operator),
+        "value": normalize(result.cond1.value),
+        }
+        cond2 = {
+        "field": str(result.cond2.field),
+        "operator": str(result.cond2.operator),
+        "value": normalize(result.cond2.value),
+        }
+        cond1["field"] = normalize(cond1["field"])
+        cond2["field"] = normalize(cond2["field"])
+
+        return {"type": "compound", "logic": logic, "conditions": [cond1, cond2]}
+    except pp.ParseException:
+        pass
 
     # ------------------ Comparison Query ------------------
     try:
@@ -231,6 +267,64 @@ def query(params, collection):
 
     elif params["type"] == "normal":
         show_mountain_details(params["mountain_name"], collection, params["field"])
+
+    elif params["type"] == "compound":
+        conditions = params["conditions"]
+        logic = params["logic"]
+
+        all_docs = [doc.to_dict() for doc in collection.stream()]
+        results = []
+        def match_condition(doc, cond):
+            field, operator, value = cond["field"], cond["operator"], cond["value"]
+            doc_val = doc.get(field, None)
+            match = False
+
+            # Special handling for Location field (list of countries)
+            if field.lower() == "location" and isinstance(doc_val, str):
+                countries = [c.strip().lower() for c in doc_val.replace(",", "/").split("/")]
+                if operator == "==":
+                    match = str(value).lower() in countries
+                elif operator == "!=":
+                    match = str(value).lower() not in countries
+            else:
+                # Case-insensitive string comparison
+                if isinstance(doc_val, str) and isinstance(value, str):
+                    doc_val_lower = doc_val.strip().lower()
+                    value_lower = str(value).strip().lower()
+                    if operator == "==":
+                        match = doc_val_lower == value_lower
+                    elif operator == "!=":
+                        match = doc_val_lower != value_lower
+                else:
+                    # Numeric comparison
+                    if operator == "==":
+                        match = doc_val == value
+                    elif operator == "!=":
+                        match = doc_val != value
+                    elif operator == ">":
+                        match = doc_val > value
+                    elif operator == ">=":
+                        match = doc_val >= value
+                    elif operator == "<":
+                        match = doc_val < value
+                    elif operator == "<=":
+                        match = doc_val <= value
+            return match
+        
+        for doc in all_docs:
+            matches = [match_condition(doc, c) for c in conditions]
+            if (logic == "and" and all(matches)) or (logic == "or" and any(matches)):
+                results.append(doc)
+        if not results:
+            cond_str = f"{conditions[0]['field']} {conditions[0]['operator']} {conditions[0]['value']} {logic.upper()} {conditions[1]['field']} {conditions[1]['operator']} {conditions[1]['value']}"
+            print(f"No mountains found with {cond_str}.\n") 
+        else:
+            print(f"Mountains matching {logic.upper()} query:")
+        for doc in results:
+            print(f"- {doc.get('MountainName', 'N/A')}")
+        print()
+
+
 
 
 # ------------------ Interactive Loop ------------------
