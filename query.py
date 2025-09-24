@@ -97,16 +97,31 @@ def show_mountain_details(name, collection, field=None):
 def sort(collection, sort_type, ascend):
     if sort_type == "name":
         sort_name(collection, ascend)
+    elif sort_type == "elevation":
+        sort_elevation(collection, ascend)
 
 
 def sort_name(collection, ascend):
     docs = collection.stream()
-    print("docs")
     names = []
     for doc in docs:
         names.append(doc.get("MountainName"))
-    names.sort(reverse = True)
-    print(names)
+    names.sort(reverse = not ascend)
+    print("Mountain Name")
+    print("------------------------------")
+    for mountain in names:
+        print(mountain[0])
+
+def sort_elevation(collection, ascend):
+    data = []
+    docs = collection.stream()
+    for doc in docs:
+        data.append((doc.get("MountainName"), doc.get("Elevation")))
+    data.sort(reverse = not ascend, key=lambda item:item[1])
+    print("Mountain Name        Elevation")
+    print("------------------------------")
+    for mountain in data:
+        print(f"{mountain[0]:<21}{mountain[1]} m")
 
 # Parse user input
 # Returns dictionary separating the type of query (comparison, compound, mountain, mountain + field)
@@ -401,9 +416,15 @@ def run_query():
         if user_input.lower() == "help":
             print_help()
             continue
-        if user_input.lower() == "sort_name":
+        if user_input.lower() == "sort_name_ascending" or user_input.lower() == "sort_name":
             sort(collection, "name", True)
             continue
+        if user_input.lower() == "sort_name_decending":
+            sort(collection, "name", False)
+        if user_input.lower() == "sort_elevation_ascending":
+            sort(collection, "elevation", True)
+        if user_input.lower() == "sort_elevation_decending"  or user_input.lower() == "sort_elevation":
+            sort(collection, "elevation", False)
         if user_input.lower() == "quit":
             exit()
 
