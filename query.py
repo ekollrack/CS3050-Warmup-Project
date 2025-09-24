@@ -1,15 +1,15 @@
 from firebase_connection import database_connection
 import pyparsing as pp
 import warnings
+
 warnings.filterwarnings("ignore")
 
-# Connect to firebase_connection.py (which connects to firestore)
-# References "mountains" collection
+# ------------------ Firestore Connection ------------------
 def get_collection():
     db = database_connection()
     return db.collection("mountains")
 
-# Returns instructions for running the program
+# ------------------ Help Menu ------------------
 def print_help():
     print("""
 Welcome to the Mountains Query Program!
@@ -34,7 +34,15 @@ Commands:
        Location == USA
        Range != Himalayas
 
-4. Special commands:
+4. Compound queries (only one AND/OR allowed):
+   [Field] [Operator] [Value] and [Field] [Operator] [Value]
+   [Field] [Operator] [Value] or [Field] [Operator] [Value]
+
+   Example:
+       Elevation > 1200 and Location == China
+       Location == Nepal or Location == India
+
+5. Special commands:
    help    -- Show this help menu
    quit    -- Exit the program
 
@@ -42,18 +50,14 @@ Available fields:
    MountainName, Elevation, Location, Range, Volcanic, LastEruption
 """)
 
-# This function is for queries that mention the mountain name or mountain name + field (normal queries)
-# Returns the details for the mountain or the specified field
-# Parameters - name (str, mountain name), collection (collection in Firestore), field (str, optional)
+# ------------------ Show Mountain Details ------------------
 def show_mountain_details(name, collection, field=None):
-    # uses the mountain name to find it in Firestore
     doc_ref = collection.document(name)
     doc = doc_ref.get()
     if not doc.exists:
         print(f"No information found. Type 'help' for guidance. \n")
         return
 
-    # Maps MountainName to Mountain Name and Last Eruption to LastEruption
     data = doc.to_dict()
     field_mapping = {
         "Mountain Name": "MountainName",
@@ -64,24 +68,18 @@ def show_mountain_details(name, collection, field=None):
         "Last Eruption": "LastEruption"
     }
 
-    # Show mountain details if no field was specified
     if field is None:
         print(f"\nDetails for {name}:")
         for key, json_key in field_mapping.items():
             if json_key in data:
                 print(f"{key}: {data[json_key]}")
         print()
-
-    # Show one field info
     else:
         # Normalize field name
         json_key = None
-        field_input = field.lower().replace(" ", "")
-        display_name = None
-        for k, mapped in field_mapping.items():
-            if field_input == k.lower().replace(" ", "") or field_input == mapped.lower().replace(" ", ""):
-                json_key = mapped
-                display_name = k
+        for k, v in field_mapping.items():
+            if field.lower() == k.lower().replace(" ", "") or field.lower() == v.lower():
+                json_key = v
                 break
 
         if not json_key:
@@ -91,8 +89,9 @@ def show_mountain_details(name, collection, field=None):
         if field.lower() == "volcanic":
             print(f"Is {name} Volcanic? {data.get(json_key, 'N/A')}\n")
         else:
-            print(f"{display_name} of {name}: {data.get(json_key, 'N/A')}\n")
+            print(f"{field} of {name}: {data.get(json_key, 'N/A')}\n")
 
+<<<<<<< HEAD
 
 def sort(collection, sort_type, ascend):
     if sort_type == "name":
@@ -125,257 +124,193 @@ def sort_elevation(collection, ascend):
 
 # Parse user input
 # Returns dictionary separating the type of query (comparison, compound, mountain, mountain + field)
+=======
+# ------------------ Parsing ------------------
+>>>>>>> 0d49e7d (need to fix multi word in compound)
 def parse(user_input, mountain_names, valid_fields):
-    # Fields (multi-word allowed)
-    fields = ["Mountain Name", "Elevation", "Location", "Range", "Volcanic", "Last Eruption"]
-    field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in fields]).set_results_name("field")
+    # Handle compound queries first
+    if " and " in user_input.lower() or " or " in user_input.lower():
+        parts = user_input.lower().split(" and ")
+        operator = "and"
+        if len(parts) == 1:  # no "and", try "or"
+            parts = user_input.lower().split(" or ")
+            operator = "or"
 
-    # Operators
-    operator_parser = pp.MatchFirst([pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
+        if len(parts) != 2:
+            return None
 
-    # Logical AND/OR
-    logical_op = pp.MatchFirst([pp.CaselessKeyword("and"), pp.CaselessKeyword("or")]).set_results_name("logic")
+        left = parse(parts[0].strip(), mountain_names, valid_fields)
+        right = parse(parts[1].strip(), mountain_names, valid_fields)
 
-    # Values: allow multi-word unquoted strings (mountain names, ranges, etc.)
-    value_parser = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/.'"))).set_results_name("value")
+        if not left or not right or left["type"] != "comparison" or right["type"] != "comparison":
+            return None
 
-    # Comparison and compound queries
-    comparison = pp.Group(field_parser("field") + operator_parser("operator") + value_parser("value"))
-    compound = pp.Group(comparison("first") + logical_op("logic") + comparison("second"))
+        return {"type": "compound", "operator": operator, "conditions": [left, right]}
 
-    # Try compound query first
+    # Field parser (case-insensitive)
+    field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in valid_fields]).set_results_name("field")
+
+    # Operator parser
+    operator_parser = pp.MatchFirst(
+        [pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
+
+    # Value parser
+    number_parser = pp.pyparsing_common.number
+    quoted_string = pp.QuotedString('"') | pp.QuotedString("'")
+    unquoted_string = pp.Word(pp.alphanums + "-/'")
+    value_parser = (number_parser | quoted_string | unquoted_string).set_results_name("value")
+
+    # Mountain parser
+    mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-.'")).set_results_name("mountain")
+
+    # Grammars
+    comparison_grammar = field_parser + operator_parser + value_parser
+    grammar1 = field_parser + mountain_parser
+    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
+    grammar3 = mountain_parser
+
+    # ------------------ Comparison Query ------------------
     try:
-        result = compound.parse_string(user_input, parse_all=True)[0]
-        return {
-            "type": "compound",
-            "conditions": [
-                {"field": result.first.field, "operator": result.first.operator, "value": result.first.value},
-                {"field": result.second.field, "operator": result.second.operator, "value": result.second.value}
-            ],
-            "logic": result.logic.lower()
-        }
+        result = comparison_grammar.parse_string(user_input, parse_all=True)
+        op = str(result.operator)
+        if op == "=":
+            op = "=="
+        val = result.value
+
+        if isinstance(val, str):
+            if val.lower() in ("true", "false"):
+                val = val.lower() == "true"
+            else:
+                try:
+                    val = float(val)
+                except ValueError:
+                    val = val.strip()
+
+        return {"type": "comparison", "field": str(result.field), "operator": op, "value": val, "mountain_name": None}
     except pp.ParseException:
         pass
 
-    # Single comparison query
-    try:
-        result = comparison.parse_string(user_input, parse_all=True)[0]
-        return {
-            "type": "comparison",
-            "field": result.field,
-            "operator": result.operator,
-            "value": result.value
-        }
-    except pp.ParseException:
-        pass
-
-    # Mountain name only (normal queries)
-    mountain_parser = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-.'"))).set_results_name("mountain")
-    try:
-        result = mountain_parser.parse_string(user_input, parse_all=True)
-        mountain_candidate = result.mountain
-    except pp.ParseException:
-        return None
-
-    # Match mountain name
+    # ------------------ Normal Query ------------------
     mountain_name = None
-    for name in mountain_names:
-        if name.lower() == mountain_candidate.lower():
-            mountain_name = name
-            break
+    field_name = None
 
-    return {"type": "normal", "field": None, "value": None, "operator": None, "mountain_name": mountain_name}
+    try:
+        result = grammar1.parse_string(user_input, parse_all=True)
+        field_name = str(result.field)
+        mountain_candidate = " ".join(result.get("mountain", []))
+    except pp.ParseException:
+        try:
+            result = grammar2.parse_string(user_input, parse_all=True)
+            field_name = str(result.field)
+            mountain_candidate = result.mountain.strip()
+        except pp.ParseException:
+            try:
+                result = grammar3.parse_string(user_input, parse_all=True)
+                mountain_candidate = " ".join(result.get("mountain", []))
+            except pp.ParseException:
+                return None
 
+    if mountain_candidate:
+        for name in mountain_names:
+            if name.lower() == mountain_candidate.lower():
+                mountain_name = name
+                break
 
+    if field_name:
+        for f in valid_fields:
+            if f.lower() == field_name.lower():
+                field_name = f
+                break
 
-# This function takes the dictionary from the parsed query and prints the results
+    return {"type": "normal", "field": field_name, "value": None, "operator": None, "mountain_name": mountain_name}
+
+# ------------------ Matching Logic ------------------
+def match_condition(doc, cond):
+    field, op, value = cond["field"], cond["operator"], cond["value"]
+    doc_val = doc.get(field, None)
+
+    if doc_val is None:
+        return False
+
+    # Special handling for Location with multiple countries
+    if field.lower() == "location" and isinstance(doc_val, str) and isinstance(value, str):
+        doc_parts = [part.strip().lower() for part in doc_val.split("/")]
+        value = value.lower().strip()
+        if op == "==":
+            return value in doc_parts
+        if op == "!=":
+            return value not in doc_parts
+        return False
+
+    if isinstance(doc_val, str) and isinstance(value, str):
+        doc_val, value = doc_val.lower().strip(), value.lower().strip()
+
+    try:
+        if op == "==": return doc_val == value
+        if op == "!=": return doc_val != value
+        if op == ">":  return doc_val > value
+        if op == ">=": return doc_val >= value
+        if op == "<":  return doc_val < value
+        if op == "<=": return doc_val <= value
+    except TypeError:
+        return False
+
+    return False
+
+# ------------------ Query Execution ------------------
 def query(params, collection):
     if params is None:
         print("Invalid input. Type 'help' for guidance.\n")
         return
 
-    all_docs = [doc.to_dict() for doc in collection.stream()]
-    results = []
-
-    # Normalize parser field names -> Firestore JSON keys
-    field_map = {
-        "last eruption": "LastEruption",
-        "mountain name": "MountainName",
-        "range": "Range",
-        "location": "Location",
-        "elevation": "Elevation",
-        "volcanic": "Volcanic"
-    }
-
-    # Convert LastEruption from string to number
-    def convert_val(compare_field, val):
-        if compare_field == "LastEruption" and isinstance(val, str):
-            try:
-                return float(val)
-            except ValueError:
-                return None
-        return val
-
-    # Handle comparison query
     if params["type"] == "comparison":
-        field = params["field"]
-        operator = params["operator"]
-        value = params["value"]
-
-        # Normalize field name to Firestore key
-        json_field = field_map.get(field.lower(), field)
-
-        # Convert Volcanic to boolean
-        if json_field == "Volcanic" and isinstance(value, str):
-            value = value.lower() in ("true", "yes", "1")
-
-        # Convert LastEruption value to number if possible
-        if json_field == "LastEruption" and isinstance(value, str):
-            try:
-                value = float(value)
-            except ValueError:
-                value = None
-
-        for doc in all_docs:
-            doc_val = convert_val(json_field, doc.get(json_field, None))
-            match = False
-
-            # Location special handling
-            if json_field == "Location" and isinstance(doc_val, str):
-                countries = [c.strip().lower() for c in doc_val.replace(",", "/").split("/")]
-                if operator == "==":
-                    match = str(value).lower() in countries
-                elif operator == "!=":
-                    match = str(value).lower() not in countries
-            else:
-                # String comparison
-                if isinstance(doc_val, str) and isinstance(value, str):
-                    if operator == "==":
-                        match = doc_val.strip().lower() == str(value).strip().lower()
-                    elif operator == "!=":
-                        match = doc_val.strip().lower() != str(value).strip().lower()
-                else:
-                    # Numeric comparison
-                    if doc_val is not None and value is not None:
-                        if operator == "==":
-                            match = doc_val == value
-                        elif operator == "!=":
-                            match = doc_val != value
-                        elif operator == ">":
-                            match = doc_val > value
-                        elif operator == ">=":
-                            match = doc_val >= value
-                        elif operator == "<":
-                            match = doc_val < value
-                        elif operator == "<=":
-                            match = doc_val <= value
-
-            if match:
-                results.append(doc)
+        field, operator, value = params["field"], params["operator"], params["value"]
+        all_docs = [doc.to_dict() for doc in collection.stream()]
+        results = [doc for doc in all_docs if match_condition(doc, params)]
 
         if not results:
             print(f"No mountains found with {field} {operator} {value}.\n")
         else:
             print(f"Mountains with {field} {operator} {value}:")
             for doc in results:
-                val_display = doc.get(json_field, "N/A")
+                val_display = doc.get(field, "N/A")
                 print(f"- {doc.get('MountainName', 'N/A')}: {field} = {val_display}")
             print()
 
-    # Handle normal queries
-    elif params["type"] == "normal":
-        show_mountain_details(params["mountain_name"], collection, params["field"])
-
-    # Handle compound queries
     elif params["type"] == "compound":
+        all_docs = [doc.to_dict() for doc in collection.stream()]
+        op = params["operator"]
         conditions = params["conditions"]
-        logic = params["logic"]
 
+        results = []
         for doc in all_docs:
-            matches = []
-
-            for cond in conditions:
-                cond_field, operator, value = cond["field"], cond["operator"], cond["value"]
-                json_field = field_map.get(cond_field.lower(), cond_field)
-                doc_val = convert_val(json_field, doc.get(json_field, None))
-
-                # Normalize values based on field type
-                if json_field == "Volcanic" and isinstance(value, str):
-                    value = value.lower() in ("true", "yes", "1")
-
-                if json_field == "LastEruption" and isinstance(value, str):
-                    try:
-                        value = float(value)
-                    except ValueError:
-                        value = None
-
-                # Location special handling (split multiple countries)
-                if json_field == "Location" and isinstance(doc_val, str):
-                    countries = [c.strip().lower() for c in doc_val.replace(",", "/").split("/")]
-                    if operator == "==":
-                        matches.append(str(value).lower() in countries)
-                    elif operator == "!=":
-                        matches.append(str(value).lower() not in countries)
-                    else:
-                        matches.append(False)
-                    continue
-
-                # String comparison for other string fields
-                if isinstance(doc_val, str) and isinstance(value, str):
-                    if operator == "==":
-                        matches.append(doc_val.strip().lower() == str(value).strip().lower())
-                    elif operator == "!=":
-                        matches.append(doc_val.strip().lower() != str(value).strip().lower())
-                    else:
-                        matches.append(False)
-                    continue
-
-                # Numeric/boolean comparison
-                if doc_val is not None and value is not None:
-                    if operator == "==":
-                        matches.append(doc_val == value)
-                    elif operator == "!=":
-                        matches.append(doc_val != value)
-                    elif operator == ">":
-                        matches.append(doc_val > value)
-                    elif operator == ">=":
-                        matches.append(doc_val >= value)
-                    elif operator == "<":
-                        matches.append(doc_val < value)
-                    elif operator == "<=":
-                        matches.append(doc_val <= value)
-                    else:
-                        matches.append(False)
-                else:
-                    matches.append(False)
-
-            # Apply AND/OR logic
-            if (logic == "and" and all(matches)) or (logic == "or" and any(matches)):
+            left = match_condition(doc, conditions[0])
+            right = match_condition(doc, conditions[1])
+            if (op == "and" and left and right) or (op == "or" and (left or right)):
                 results.append(doc)
 
         if not results:
-            cond_str = f"{conditions[0]['field']} {conditions[0]['operator']} {conditions[0]['value']} {logic.upper()} {conditions[1]['field']} {conditions[1]['operator']} {conditions[1]['value']}"
+            cond_str = f"{conditions[0]['field']} {conditions[0]['operator']} {conditions[0]['value']} {op.upper()} {conditions[1]['field']} {conditions[1]['operator']} {conditions[1]['value']}"
             print(f"No mountains found with {cond_str}.\n")
         else:
-            print(f"Mountains matching {logic.upper()} query:")
+            print("Mountains matching compound query:")
             for doc in results:
                 print(f"- {doc.get('MountainName', 'N/A')}")
             print()
 
+    elif params["type"] == "normal":
+        show_mountain_details(params["mountain_name"], collection, params["field"])
 
-# First function called, calls other functions
+# ------------------ Interactive Loop ------------------
 def run_query():
-
-    # Connect to firestore and get mountain names and fields
     collection = get_collection()
     all_docs = collection.stream()
     mountain_names = [doc.id for doc in all_docs]
-    valid_fields = ["MountainName", "Elevation", "Location", "Range", "Volcanic", "LastEruption", "Mountain Name", "Last Eruption"]
+    valid_fields = ["MountainName", "Elevation", "Location", "Range", "Volcanic", "LastEruption"]
 
-    print("Welcome!")
+    print("Welcome to Mountains Query Program!")
     print("Type 'help' for commands. Type 'quit' to exit.")
 
-    # Gets user input
     while True:
         user_input = input("> ").strip()
         if not user_input:
@@ -383,6 +318,7 @@ def run_query():
         if user_input.lower() == "help":
             print_help()
             continue
+<<<<<<< HEAD
         if user_input.lower() == "sort_name_ascending" or user_input.lower() == "sort_name":
             sort(collection, "name", True)
             continue
@@ -392,13 +328,14 @@ def run_query():
             sort(collection, "elevation", True)
         if user_input.lower() == "sort_elevation_decending"  or user_input.lower() == "sort_elevation":
             sort(collection, "elevation", False)
+=======
+>>>>>>> 0d49e7d (need to fix multi word in compound)
         if user_input.lower() == "quit":
             exit()
 
-        # Parse and execute query
         parsed = parse(user_input, mountain_names, valid_fields)
         query(parsed, collection)
 
-# Main functionality
+# ------------------ Entry Point ------------------
 if __name__ == "__main__":
     run_query()
