@@ -118,9 +118,9 @@ def parse(user_input, mountain_names, valid_fields):
     # Logical AND/OR
     logical_op = pp.MatchFirst([pp.CaselessKeyword("and"), pp.CaselessKeyword("or")]).set_results_name("logic")
 
-    # Value parser
+    # Value parser (allow multi-word unquoted strings)
     number_parser = pp.pyparsing_common.number
-    unquoted_string = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/'")))
+    unquoted_string = pp.OneOrMore(pp.Word(pp.alphanums + "-/'")).set_parse_action(lambda t: " ".join(t))
 
     value_parser = (number_parser | unquoted_string).set_parse_action(
         lambda t: (
