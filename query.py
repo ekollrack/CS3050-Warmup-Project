@@ -126,7 +126,7 @@ def sort_elevation(collection, ascend):
 # Parse user input
 # Returns dictionary separating the type of query (comparison, compound, mountain, mountain + field)
 def parse(user_input, mountain_names, valid_fields):
-    # Fields
+    # Fields (multi-word allowed)
     fields = ["Mountain Name", "Elevation", "Location", "Range", "Volcanic", "Last Eruption"]
     field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in fields]).set_results_name("field")
 
@@ -136,29 +136,14 @@ def parse(user_input, mountain_names, valid_fields):
     # Logical AND/OR
     logical_op = pp.MatchFirst([pp.CaselessKeyword("and"), pp.CaselessKeyword("or")]).set_results_name("logic")
 
-    # Value parser (multi-word unquoted strings allowed)
-    number_parser = pp.pyparsing_common.number
-    unquoted_string = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/.'"))).set_parse_action(lambda t: " ".join(t))
-    value_parser = (number_parser | unquoted_string).set_parse_action(
-        lambda t: (
-            True if str(t[0]).strip().lower() == "true" else
-            False if str(t[0]).strip().lower() == "false" else
-            float(t[0]) if isinstance(t[0], (int, float)) or str(t[0]).replace(".", "", 1).isdigit() else
-            t[0].strip()
-        )
-    ).set_results_name("value")
+    # Values: allow multi-word unquoted strings (mountain names, ranges, etc.)
+    value_parser = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/.'"))).set_results_name("value")
 
     # Comparison and compound queries
-    comparison = pp.Group(field_parser + operator_parser + value_parser + pp.Optional(pp.White()))
+    comparison = pp.Group(field_parser("field") + operator_parser("operator") + value_parser("value"))
     compound = pp.Group(comparison("first") + logical_op("logic") + comparison("second"))
 
-    # Mountain name queries
-    mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-.'")).set_results_name("mountain")
-    field_then_mountain = field_parser + mountain_parser
-    mountain_then_field = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
-    mountain_only = mountain_parser
-
-    # Compound queries
+    # Try compound query first
     try:
         result = compound.parse_string(user_input, parse_all=True)[0]
         return {
@@ -172,7 +157,7 @@ def parse(user_input, mountain_names, valid_fields):
     except pp.ParseException:
         pass
 
-    # Single comparison
+    # Single comparison query
     try:
         result = comparison.parse_string(user_input, parse_all=True)[0]
         return {
@@ -184,41 +169,23 @@ def parse(user_input, mountain_names, valid_fields):
     except pp.ParseException:
         pass
 
-    # Field + mountain or mountain only
-    mountain_name = None
-    field_name = None
+    # Mountain name only (normal queries)
+    mountain_parser = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-.'"))).set_results_name("mountain")
     try:
-        result = field_then_mountain.parse_string(user_input, parse_all=True)
-        field_name = result.field
-        mountain_candidate = " ".join(result.mountain)
+        result = mountain_parser.parse_string(user_input, parse_all=True)
+        mountain_candidate = result.mountain
     except pp.ParseException:
-        try:
-            result = mountain_then_field.parse_string(user_input, parse_all=True)
-            field_name = result.field
-            mountain_candidate = result.mountain.strip()
-        except pp.ParseException:
-            try:
-                result = mountain_only.parse_string(user_input, parse_all=True)
-                mountain_candidate = " ".join(result.mountain)
-            except pp.ParseException:
-                return None
+        return None
 
-    # Match mountain name to valid list
-    if mountain_candidate:
-        for name in mountain_names:
-            if name.lower() == mountain_candidate.lower():
-                mountain_name = name
-                break
+    # Match mountain name
+    mountain_name = None
+    for name in mountain_names:
+        if name.lower() == mountain_candidate.lower():
+            mountain_name = name
+            break
 
-    # Match field name to valid fields
-    if field_name:
-        field_input = field_name.lower().replace(" ", "")
-        for f in valid_fields:
-            if field_input == f.lower().replace(" ", ""):
-                field_name = f
-                break
+    return {"type": "normal", "field": None, "value": None, "operator": None, "mountain_name": mountain_name}
 
-    return {"type": "normal", "field": field_name, "value": None, "operator": None, "mountain_name": mountain_name}
 
 
 # This function takes the dictionary from the parsed query and prints the results
