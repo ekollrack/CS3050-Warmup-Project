@@ -118,12 +118,11 @@ def parse(user_input, mountain_names, valid_fields):
     # Logical AND/OR
     logical_op = pp.MatchFirst([pp.CaselessKeyword("and"), pp.CaselessKeyword("or")]).set_results_name("logic")
 
-    # Value parser: numbers, quoted strings, or unquoted words
+    # Value parser
     number_parser = pp.pyparsing_common.number
-    quoted_string = pp.QuotedString('"') | pp.QuotedString("'")
     unquoted_string = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/'")))
 
-    value_parser = (number_parser | quoted_string | unquoted_string).set_parse_action(
+    value_parser = (number_parser | unquoted_string).set_parse_action(
         lambda t: (
             True if str(t[0]).strip().lower() == "true" else
             False if str(t[0]).strip().lower() == "false" else
@@ -144,26 +143,26 @@ def parse(user_input, mountain_names, valid_fields):
 
     # Compound query
     try:
-        res = compound.parse_string(user_input, parse_all=True)[0]
+        result = compound.parse_string(user_input, parse_all=True)[0]
         return {
             "type": "compound",
             "conditions": [
-                {"field": res.first.field, "operator": "==" if res.first.operator=="=" else res.first.operator, "value": res.first.value},
-                {"field": res.second.field, "operator": "==" if res.second.operator=="=" else res.second.operator, "value": res.second.value}
+                {"field": result.first.field, "operator": result.first.operator, "value": result.first.value},
+                {"field": result.second.field, "operator": result.second.operator, "value": result.second.value}
             ],
-            "logic": res.logic.lower()
+            "logic": result.logic.lower()
         }
     except pp.ParseException:
         pass
 
     # Single comparison
     try:
-        res = comparison.parse_string(user_input, parse_all=True)[0]
+        result = comparison.parse_string(user_input, parse_all=True)[0]
         return {
             "type": "comparison",
-            "field": res.field,
-            "operator": "==" if res.operator=="=" else res.operator,
-            "value": res.value,
+            "field": result.field,
+            "operator": result.operator,
+            "value": result.value,
             "mountain_name": None
         }
     except pp.ParseException:
@@ -173,18 +172,18 @@ def parse(user_input, mountain_names, valid_fields):
     mountain_name = None
     field_name = None
     try:
-        res = field_then_mountain.parse_string(user_input, parse_all=True)
-        field_name = res.field
-        mountain_candidate = " ".join(res.mountain)
+        result = field_then_mountain.parse_string(user_input, parse_all=True)
+        field_name = result.field
+        mountain_candidate = " ".join(result.mountain)
     except pp.ParseException:
         try:
-            res = mountain_then_field.parse_string(user_input, parse_all=True)
-            field_name = res.field
-            mountain_candidate = res.mountain.strip()
+            result = mountain_then_field.parse_string(user_input, parse_all=True)
+            field_name = result.field
+            mountain_candidate = result.mountain.strip()
         except pp.ParseException:
             try:
-                res = mountain_only.parse_string(user_input, parse_all=True)
-                mountain_candidate = " ".join(res.mountain)
+                result = mountain_only.parse_string(user_input, parse_all=True)
+                mountain_candidate = " ".join(result.mountain)
             except pp.ParseException:
                 return None
 
@@ -197,9 +196,9 @@ def parse(user_input, mountain_names, valid_fields):
 
     # Match field
     if field_name:
-        f_input = field_name.lower().replace(" ", "")
+        field_input = field_name.lower().replace(" ", "")
         for f in valid_fields:
-            if f_input == f.lower().replace(" ", ""):
+            if field_input == f.lower().replace(" ", ""):
                 field_name = f
                 break
 
