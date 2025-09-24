@@ -41,8 +41,18 @@ Commands:
       Location == USA
       Range != Himalayas
 
-
-4. Special commands:
+4. Compound queries:
+    [Field] [Operator] [Value] and/or [Field] [Operator] [Value]
+         
+    Examples: 
+        Elevation > 4000 or Range == Himalayas
+        Location == China and Volcanic == True
+         
+5. Sort functions:
+    sort name: shows all mountains in alphabetical order
+    sort elevation: shows all mountains from tallest to shortest
+         
+6. Special commands:
   help    -- Show this help menu
   quit    -- Exit the program
 
@@ -374,7 +384,7 @@ def run_query():
        if user_input.lower() == "help":
            print_help()
            continue
-       if user_input.lower() == "sort_name_ascending" or user_input.lower() == "sort_name":
+       if user_input.lower() == "sort_name_ascending" or user_input.lower() == "sort name":
            sort(collection, "name", True)
            continue
        if user_input.lower() == "sort_name_decending":
@@ -383,7 +393,7 @@ def run_query():
        if user_input.lower() == "sort_elevation_ascending":
            sort(collection, "elevation", True)
            continue
-       if user_input.lower() == "sort_elevation_decending"  or user_input.lower() == "sort_elevation":
+       if user_input.lower() == "sort_elevation_decending"  or user_input.lower() == "sort elevation":
            sort(collection, "elevation", False)
            continue
        if user_input.lower() == "quit":
