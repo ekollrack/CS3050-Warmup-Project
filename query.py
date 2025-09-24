@@ -91,12 +91,12 @@ def show_mountain_details(name, collection, field=None):
             print(f"{v} of {name}: {data.get(json_key, 'N/A')}\n")
 
 
-def sort(collection, type, assend):
+def sort(collection, type, ascend):
     if type == "name":
-        sort_name(collection, assend)
+        sort_name(collection, ascend)
 
 
-def sort_name(collection, assend):
+def sort_name(collection, ascend):
     docs = collection.stream()
     print("docs")
     names = []
@@ -105,101 +105,106 @@ def sort_name(collection, assend):
     names.sort(reverse = True)
     print(names)
 
-
-
-
-# This function parses queries with comparison operators and returns a dictionary
-# Parameters - user input (str from user), mountain names (list of str), valid fields (list of str)
+# Parse user input
+# Returns dictionary separating the type of query (comparison, compound, mountain, mountain + field)
 def parse(user_input, mountain_names, valid_fields):
-    # Field parser (case-insensitive) to match the specified field
-    field_parser = pp.MatchFirst([
-        pp.CaselessKeyword(f) for f in ["Mountain Name", "Elevation", "Location", "Range", "Volcanic", "Last Eruption"]
-    ]).set_results_name("field")
+    # Fields
+    fields = ["Mountain Name", "Elevation", "Location", "Range", "Volcanic", "Last Eruption"]
+    field_parser = pp.MatchFirst([pp.CaselessKeyword(f) for f in fields]).set_results_name("field")
 
-    # Operator parser
-    operator_parser = pp.MatchFirst(
-        [pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
-    
-    # And or parser
-    logical_op = pp.CaselessKeyword("and") | pp.CaselessKeyword("or")
+    # Operators
+    operator_parser = pp.MatchFirst([pp.Literal(op) for op in ["==", "!=", ">=", "<=", "=", ">", "<"]]).set_results_name("operator")
 
-    # Value parser
+    # Logical AND/OR
+    logical_op = pp.MatchFirst([pp.CaselessKeyword("and"), pp.CaselessKeyword("or")]).set_results_name("logic")
+
+    # Value parser: numbers, quoted strings, or unquoted words
     number_parser = pp.pyparsing_common.number
     quoted_string = pp.QuotedString('"') | pp.QuotedString("'")
-    unquoted_string = pp.OneOrMore(pp.Word(pp.alphanums + "-/'")).set_parse_action(lambda t: " ".join(t))
-    value_parser = (number_parser | quoted_string | unquoted_string).set_results_name("value")
+    unquoted_string = pp.Combine(pp.OneOrMore(pp.Word(pp.alphanums + "-/'")))
 
-    # Mountain parser: allow letters, numbers, hyphens, apostrophes, and dots
+    value_parser = (number_parser | quoted_string | unquoted_string).set_parse_action(
+        lambda t: (
+            True if str(t[0]).strip().lower() == "true" else
+            False if str(t[0]).strip().lower() == "false" else
+            float(t[0]) if isinstance(t[0], (int, float)) or str(t[0]).replace(".", "", 1).isdigit() else
+            t[0].strip()
+        )
+    ).set_results_name("value")
+
+    # Comparison and compound queries
+    comparison = pp.Group(field_parser + operator_parser + value_parser)
+    compound = pp.Group(comparison("first") + logical_op("logic") + comparison("second"))
+
+    # Mountain name queries
     mountain_parser = pp.OneOrMore(pp.Word(pp.alphanums + "-.'")).set_results_name("mountain")
+    field_then_mountain = field_parser + mountain_parser
+    mountain_then_field = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
+    mountain_only = mountain_parser
 
-    # field operator value structure
-    comparison_grammar = field_parser + operator_parser + value_parser
-    # Field first, then mountain
-    grammar1 = field_parser + mountain_parser
-    # Mountain first, then field
-    grammar2 = pp.SkipTo(field_parser).set_results_name("mountain") + field_parser
-    # Only mountain name
-    grammar3 = mountain_parser
-
-    # For comparison queries (comparison_grammer)
+    # Compound query
     try:
-        result = comparison_grammar.parse_string(user_input, parse_all=True)
-        op = str(result.operator)
-        if op == "=":
-            op = "=="
-
-        # Convert value to bool, float, or string
-        val = result.value[0] if isinstance(result.value, pp.ParseResults) else result.value
-
-        if isinstance(val, str):
-            if val.lower() in ("true", "false"):
-                val = val.lower() == "true"
-            else:
-                try:
-                    val = float(val)
-                except ValueError:
-                    val = val.strip()
-        # return comparison query
-        return {"type": "comparison", "field": str(result.field), "operator": op, "value": val, "mountain_name": None}
+        res = compound.parse_string(user_input, parse_all=True)[0]
+        return {
+            "type": "compound",
+            "conditions": [
+                {"field": res.first.field, "operator": "==" if res.first.operator=="=" else res.first.operator, "value": res.first.value},
+                {"field": res.second.field, "operator": "==" if res.second.operator=="=" else res.second.operator, "value": res.second.value}
+            ],
+            "logic": res.logic.lower()
+        }
     except pp.ParseException:
         pass
 
-    # ------------------ Normal Query ------------------
+    # Single comparison
+    try:
+        res = comparison.parse_string(user_input, parse_all=True)[0]
+        return {
+            "type": "comparison",
+            "field": res.field,
+            "operator": "==" if res.operator=="=" else res.operator,
+            "value": res.value,
+            "mountain_name": None
+        }
+    except pp.ParseException:
+        pass
+
+    # Field and mountain queries
     mountain_name = None
     field_name = None
-
     try:
-        result = grammar1.parse_string(user_input, parse_all=True)
-        field_name = str(result.field)
-        mountain_candidate = " ".join(result.get("mountain", []))
+        res = field_then_mountain.parse_string(user_input, parse_all=True)
+        field_name = res.field
+        mountain_candidate = " ".join(res.mountain)
     except pp.ParseException:
         try:
-            result = grammar2.parse_string(user_input, parse_all=True)
-            field_name = str(result.field)
-            mountain_candidate = result.mountain.strip()
+            res = mountain_then_field.parse_string(user_input, parse_all=True)
+            field_name = res.field
+            mountain_candidate = res.mountain.strip()
         except pp.ParseException:
             try:
-                result = grammar3.parse_string(user_input, parse_all=True)
-                mountain_candidate = " ".join(result.get("mountain", []))
+                res = mountain_only.parse_string(user_input, parse_all=True)
+                mountain_candidate = " ".join(res.mountain)
             except pp.ParseException:
                 return None
 
-    # Match mountain name case-insensitively
+    # Match mountain name
     if mountain_candidate:
         for name in mountain_names:
             if name.lower() == mountain_candidate.lower():
                 mountain_name = name
                 break
 
-    # Match field name case-insensitively
+    # Match field
     if field_name:
-        field_input = field_name.lower().replace(" ", "")
+        f_input = field_name.lower().replace(" ", "")
         for f in valid_fields:
-            if field_input == f.lower().replace(" ", ""):
+            if f_input == f.lower().replace(" ", ""):
                 field_name = f
                 break
 
     return {"type": "normal", "field": field_name, "value": None, "operator": None, "mountain_name": mountain_name}
+
 
 
 # This function takes the dictionary from the parsed query and prints the results
@@ -325,8 +330,6 @@ def query(params, collection):
         for doc in results:
             print(f"- {doc.get('MountainName', 'N/A')}")
         print()
-
-
 
 
 # First function called, calls other functions
