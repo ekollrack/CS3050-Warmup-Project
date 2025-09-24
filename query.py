@@ -126,7 +126,7 @@ def parse(user_input, mountain_names, valid_fields):
     # Value parser
     number_parser = pp.pyparsing_common.number
     quoted_string = pp.QuotedString('"') | pp.QuotedString("'")
-    unquoted_string = pp.Word(pp.alphanums + "-/'")
+    unquoted_string = pp.OneOrMore(pp.Word(pp.alphanums + "-/'")).set_parse_action(lambda t: " ".join(t))
     value_parser = (number_parser | quoted_string | unquoted_string).set_results_name("value")
 
     # Mountain parser: allow letters, numbers, hyphens, apostrophes, and dots
@@ -149,7 +149,7 @@ def parse(user_input, mountain_names, valid_fields):
             op = "=="
 
         # Convert value to bool, float, or string
-        val = result.value
+        val = result.value[0] if isinstance(result.value, pp.ParseResults) else result.value
 
         if isinstance(val, str):
             if val.lower() in ("true", "false"):
